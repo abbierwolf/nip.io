@@ -251,6 +251,8 @@ class DynamicBackend:
             qname = cmd[1].lower()
             qtype = cmd[3]
 
+            _log(f"Handle {qname} {gtype}")
+
             if (qtype == "A" or qtype == "ANY") and qname.endswith(self.domain):
                 if qname == self.domain:
                     self.handle_self(self.domain)
@@ -338,6 +340,7 @@ class DynamicBackend:
 
 
     def handle_acme(self, qname):
+        _log(f"Handle acmd for {qname}")
         ip = self.name_servers[qname]
         _write('DATA', self.bits, self.auth, qname, 'IN', 'A', self.ttl, self.id, ip)
         _write('DATA', self.bits, self.auth, qname, 'IN', 'TXT', self.ttl, self.id, self.acme_challenge)
