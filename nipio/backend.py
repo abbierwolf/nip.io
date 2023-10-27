@@ -251,7 +251,7 @@ class DynamicBackend:
             qname = cmd[1].lower()
             qtype = cmd[3]
 
-            _log(f"Handle {qname} {gtype}")
+            _log(f"Handle {qname} {qtype}")
 
             if (qtype == "A" or qtype == "ANY") and qname.endswith(self.domain):
                 if qname == self.domain:
