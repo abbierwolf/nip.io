@@ -337,10 +337,11 @@ class DynamicBackend:
         _write("END")
 
 
-    def handle_acme(self, name):
-        _write('DATA', name, 'IN', 'A', self.ttl, self.id, self.ip_address)
-        _write('DATA', name, 'IN', 'TXT', self.ttl, self.id, self.acme_challenge)
-        self.write_name_servers(name)
+    def handle_acme(self, qname):
+        ip = self.name_servers[qname]
+        _write('DATA', self.bits, self.auth, qname, 'IN', 'A', self.ttl, self.id, ip)
+        _write('DATA', self.bits, self.auth, qname, 'IN', 'TXT', self.ttl, self.id, self.acme_challenge)
+        self.write_name_servers(qname)
         _write('END')
 
     def write_name_servers(self, qname: str) -> None:
