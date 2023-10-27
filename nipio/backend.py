@@ -340,9 +340,8 @@ class DynamicBackend:
 
 
     def handle_acme(self, qname):
-        _log(f"Handle acmd for {qname}")
-        ip = self.name_servers[qname]
-        _write('DATA', self.bits, self.auth, qname, 'IN', 'A', self.ttl, self.id, ip)
+        _log(f"Handle acme for {qname}")
+        _write('DATA', self.bits, self.auth, qname, 'IN', 'A', self.ttl, self.id, self.ip_address)
         _write('DATA', self.bits, self.auth, qname, 'IN', 'TXT', self.ttl, self.id, self.acme_challenge)
         self.write_name_servers(qname)
         _write('END')
