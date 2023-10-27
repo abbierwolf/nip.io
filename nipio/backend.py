@@ -113,6 +113,7 @@ class DynamicBackend:
         blacklisted_ips
         bits
         auth
+        acme_challenge
 
     Environment variables:
     NIPIO_DOMAIN -- NIP.IO main domain.
@@ -152,6 +153,7 @@ class DynamicBackend:
         self.blacklisted_ips: List[str] = []
         self.bits = "0"
         self.auth = "1"
+        self.acme_challenge = ''
 
     def configure(self, config_filename: str = _get_default_config_file()) -> None:
         """Configure the pipe backend using the backend.conf file.
@@ -202,6 +204,8 @@ class DynamicBackend:
             ):
                 self.blacklisted_ips.append(entry[1])
 
+        self.acme_challenge = config.get('acme', 'challenge')
+
         _log(f"Name servers: {self.name_servers}")
         _log(f"ID: {self.id}")
         _log(f"TTL: {self.ttl}")
@@ -210,6 +214,7 @@ class DynamicBackend:
         _log(f"Domain: {self.domain}")
         _log(f"Whitelisted IP ranges: {[str(r) for r in self.whitelisted_ranges]}")
         _log(f"Blacklisted IPs: {self.blacklisted_ips}")
+        _log(f"ACME challenge: {self.acme_challenge}")
 
     def run(self) -> None:
         """Run the pipe backend.
@@ -251,10 +256,14 @@ class DynamicBackend:
                     self.handle_self(self.domain)
                 elif qname in self.name_servers:
                     self.handle_nameservers(qname)
+                elif qname == '_acme-challenge.' + self.domain and self.acme_challenge:
+                    self.handle_acme(qname)
                 else:
                     self.handle_subdomains(qname)
             elif qtype == "SOA" and qname.endswith(self.domain):
                 self.handle_soa(qname)
+            elif qtype == 'TXT' and qname == '_acme-challenge.' + self.domain and self.acme_challenge:
+                self.handle_acme(qname)
             else:
                 self.handle_unknown(qtype, qname)
 
@@ -326,6 +335,13 @@ class DynamicBackend:
         ip = self.name_servers[qname]
         _write("DATA", self.bits, self.auth, qname, "IN", "A", self.ttl, self.id, ip)
         _write("END")
+
+
+    def handle_acme(self, name):
+        _write('DATA', name, 'IN', 'A', self.ttl, self.id, self.ip_address)
+        _write('DATA', name, 'IN', 'TXT', self.ttl, self.id, self.acme_challenge)
+        self.write_name_servers(name)
+        _write('END')
 
     def write_name_servers(self, qname: str) -> None:
         for name_server in self.name_servers:
